@@ -1,10 +1,18 @@
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
+import classNames from 'classnames';
+import { withStyles } from '@material-ui/core/styles';
 import { SnackbarContext, SnackbarContextNext } from './SnackbarContext';
 import { TRANSITION_DELAY, TRANSITION_DOWN_DURATION, MESSAGES } from './utils/constants';
+import capitalise from './utils/capitalise';
 import SnackbarItem from './SnackbarItem';
 import warning from './utils/warning';
 
+import {
+    getMuiClasses,
+} from './SnackbarItem/SnackbarItem.util';
+
+import { styles } from './SnackbarProvider.styles';
 
 class SnackbarProvider extends Component {
     state = {
@@ -16,13 +24,7 @@ class SnackbarProvider extends Component {
     get offsets() {
         const { snacks } = this.state;
         return snacks.map((item, i) => {
-            let index = i;
-            let offset = 20;
-            while (snacks[index - 1]) {
-                offset += snacks[index - 1].height + 16;
-                index -= 1;
-            }
-            return offset;
+            return 20;
         });
     }
 
@@ -194,7 +196,9 @@ class SnackbarProvider extends Component {
     };
 
     render() {
-        const { children, maxSnack, ...props } = this.props;
+        const { children, maxSnack, classes, anchorOrigin = {}, className, ...props } = this.props,
+        itemClasses = getMuiClasses(classes);
+
         const snacksWithIndex =  this.state.snacks.filter(i => !isNaN(i.forceIndex)).sort((a,b) => a.forceIndex - b.forceIndex);
         let snacks = this.state.snacks.filter(i => isNaN(i.forceIndex)).reverse(); // Snacks we dont care about the index
 
@@ -211,17 +215,25 @@ class SnackbarProvider extends Component {
                 }}>
                     <Fragment>
                         {children}
-                        {snacks.map((snack, index) => (
-                            <SnackbarItem
-                                {...props}
-                                key={snack.key}
-                                snack={snack}
-                                offset={this.offsets[index]}
-                                onClose={this.handleCloseSnack}
-                                onExited={this.handleExitedSnack}
-                                onSetHeight={this.handleSetHeight}
-                            />
-                        ))}
+                        <div className={classNames(
+                            classes.root,
+                            classes[`anchorOrigin${capitalise(anchorOrigin.vertical)}${capitalise(anchorOrigin.horizontal)}`],
+                            className,
+                        )}>
+                            {snacks.map((snack, index) => (
+                                <SnackbarItem
+                                    {...props}
+                                    classOverrides={itemClasses}
+                                    key={snack.key}
+                                    anchorOrigin={anchorOrigin}
+                                    snack={snack}
+                                    offset={this.offsets[index]}
+                                    onClose={this.handleCloseSnack}
+                                    onExited={this.handleExitedSnack}
+                                    onSetHeight={this.handleSetHeight}
+                                />
+                            ))}
+                        </div>
                     </Fragment>
                 </SnackbarContextNext.Provider>
             </SnackbarContext.Provider>
@@ -246,4 +258,4 @@ SnackbarProvider.defaultProps = {
     onExited: undefined,
 };
 
-export default SnackbarProvider;
+export default withStyles(styles)(SnackbarProvider);
